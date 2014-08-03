@@ -1,0 +1,81 @@
+[UBM]
+
+    Modelo de fundo universal, ou seja, ele é gerado a partir de locuções de
+todos os locutores (inclusive aquele que pretendemos identificar). A função de
+criação do modelo pode ser 'max', 'mean' ou outra.
+    Possui como vantagem não precisar criar um background para cada locutor, o
+que seria extremamente trabalhoso.
+    Pode ser feito a partir da combinação de diversos UBMs parciais, contudo a
+abordagem padrão é efetuar um único modelo diretamente das locuções.
+
+[Teste]
+
+    Efetuado a partir do teste da razão de verossimilhança. Dadas as verossimilhanças
+de H0 e H1 (modelos do locutor, lambda_hip, e do background, lambda_hip) e dada
+uma locução de teste X, calcula-se a razão entre p(X|lambda_hip) e p(X|lambda_comp(hip)),
+e, caso a mesma seja maior que um determinado valor, aceita X. Senão, rejeita X.
+    O processo de extração de características de X produz um conjunto de vetores
+{x_1, x_2, ..., x_T}, uma vez que este sinal é dividido em frames (divisão no tempo).
+Logo,
+
+    p(X|lambda) = mult(i=1, T) p(x_i|lambda)
+
+ou na escala logaritmica
+
+    log[p(X|lambda)] = (1/T)mult(i=1, T) log[p(x_i|lambda)]
+
+e a razão de verossimilhança, Score(x), torna-se
+
+    Score(x) = log[p(X|lambda_hip)] - log[p(X|lambda_comp(hip))]
+
+[Pré-processamento]
+
+    Técnicas e algoritmos que visam melhorar a qualidade do sinal ou acentuar
+características específicas importantes para o processo final de reconhecimento.
+
+    [VAD - Voice Activity Detector]
+
+    Detectam a atividade de voz, removendo partes que onde a mesma não encontra-se
+presente. Geralmente estas partes possuem silêncio ou ruído de fundo e degradam o
+desempenho do sistema.
+    VADs baseados em energia são simples, contudo são sensíveis a ruído, e portanto
+variações no mesmo podem comprometer seu desempenho. Possuem bons resultados em
+locuções com pouco ruído, principalmente quando os segmentos de voz são bem mais
+longos que aqueles com apenas ruído.
+
+[Extração de características]
+    (ver Figura 4.2 do TG de Hector)
+
+    1) O sinal de voz é janelado a cada 10 ms, com largura de 25 ms (usual). Dado uma
+taxa de amostragem de 16 kHz (captura o sinal até 8 kHz), cada frame de 25 ms conterá
+400 amostras. Como o frame rate é 10 ms, as primeiras 400 amostras começam em 0, as
+próximas 400 começam a partir da amostra 160 (0 até 159 da primeira janela) e etc.
+Se a divisão não for exata, preenche com 0s o que faltar.
+
+    2) Cada frame de tamanho 25 ms possui um conjunto de vetores em MFC, os MFCCs. O
+sinal é chamado s(n), e após o janelamento, s_i(n), onde n varia de 1-400 e i varia
+de acordo com o número de frames.
+
+    3) Calcula-se a DFT (transformada de Fourier discreta), gerando os S_i(k), onde
+o i denota o índice da janela (frame) correspondente à janela no domínio do tempo.
+P_i(k) é o espectro de potência da janela i.
+
+    S_i(k) = sum(n=1, N) s_i(n)*h(n)exp(-j*2*pi*k*n/N), 1 <= k <= K
+
+onde h(n) é a janela (Hamming, por exemplo) e K é o tamanho da DFT. O periodogram-based
+power spectral estimate para a janela é dado por:
+
+    P_i(k) = (1/N)*norma(S_i(k))^2
+
+    4) Computar o banco de filtros em escala mel (entre 20-40, usualmente 26).
+To calculate filterbank energies we multiply each filterbank with the power spectrum,
+then add up the coefficents. Ver a 1ª figura do link http://practicalcryptography.com/miscellaneous/machine-learning/guide-mel-frequency-cepstral-coefficients-mfccs/
+
+    5) Cálculo do log da energia de saída de cada filtro. O banco de filtros fica
+"logado" com 26 valores (para o exemplo do link acima, com 26 filtros). Agora fica
+o log da escala mel.
+
+    6) Calcular a DCT (discrete cosine transform) das 26 log filterbank energies para
+tomar os 26 coeficientes cepstrais. Para ASR (Automatic Speech Recognition), somente
+os 12-13 primeiros coeficientes são usados (evita degradação do sistema). Estes são
+os MFCCs.
