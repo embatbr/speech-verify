@@ -1,3 +1,6 @@
+#!/usr/bin/python3.4
+
+
 """Project's main module. In this file is where all codes are used to perform
 the task of speaker verification.
 """
@@ -5,8 +8,12 @@ the task of speaker verification.
 
 import numpy as np
 import scipy.io.wavfile as wavfile
+import os
 
 import features
+
+
+CORPUS_PATH = '../corpus/'
 
 
 class Wave(object):
@@ -26,17 +33,56 @@ class Wave(object):
         return len(self.signal)
 
 
+def read_speakers(dirname):
+    dirs = os.listdir('%s/%s/' % (CORPUS_PATH, dirname))
+
+    females = [d for d in dirs if d[0] == 'f']
+    females.sort()
+    males = [d for d in dirs if d[0] == 'm']
+    males.sort()
+
+    return (females, males)
+
+def read_utterances(speaker):
+    speaker_list = os.listdir('%s/enroll_1/%s/' % (CORPUS_PATH, speaker))[0]
+    utterances = os.listdir('%s/enroll_1/%s/%s/' % (CORPUS_PATH, speaker, speaker_list))
+    utterances = [utterance for utterance in utterances if utterance.endswith('.wav')]
+    utterances.sort()
+
+    return utterances
+
+
+def enroll_1():
+    (females, males) = read_speakers('enroll_1')
+    # lists of list
+    female_utterances = [read_utterances(female) for female in females]
+    male_utterances = [read_utterances(male) for male in males]
+
+    # GMM female
+    for utterances in female_utterances:
+        # TODO fazer um "for utterance in utterances: do GMM"
+        print(utterances)
+        print()
+
+    # GMM male
+    for utterances in male_utterances:
+        pass
+
+
+def enroll_2():
+    read_speakers('enroll_2')
+
+
+def imposter():
+    read_speakers('imposter')
+
+
 if __name__ == '__main__':
-    import sys
-    import matplotlib.pyplot as plt
-    import scipy.signal as signal
+    #enroll_1()
+    #enroll_2()
+    #imposter()
 
-    if len(sys.argv) != 2:
-        print('Which file?')
-        sys.exit(-1)
-
-    filename = sys.argv[1]
-    wave = Wave('%s.in.wav' % filename)
+    wave = Wave('test.wav')
     print('signal with', len(wave.signal), 'samples')
     print()
 
@@ -46,15 +92,5 @@ if __name__ == '__main__':
 
     print('framedMFCCs:', framedMFCCs.shape)
     print(framedMFCCs)
-    print()
-    print('framedMFCCsDelta:', framedMFCCsDelta.shape)
-    print(framedMFCCsDelta)
-    print()
-    print('framedMFCCsDeltaDelta:', framedMFCCsDeltaDelta.shape)
-    print(framedMFCCsDeltaDelta)
-
-    #plt.grid(True)
-    #plt.xlabel('sample')
-    #plt.ylabel('intensity')
-    #plt.plot(wave.signal)
-    #plt.show()
+    print('framedMFCCs + delta:', framedMFCCsDelta.shape)
+    print('framedMFCCs + delta + delta-delta:', framedMFCCsDeltaDelta.shape)
