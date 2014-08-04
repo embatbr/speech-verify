@@ -13,7 +13,9 @@ import os
 import features
 
 
-CORPUS_PATH = '../corpus/'
+ENROLL_1 = '../corpus/enroll_1'
+ENROLL_2 = '../corpus/enroll_2'
+IMPOSTER = '../corpus/imposter'
 
 
 class Wave(object):
@@ -33,8 +35,8 @@ class Wave(object):
         return len(self.signal)
 
 
-def read_speakers(dirname):
-    dirs = os.listdir('%s/%s/' % (CORPUS_PATH, dirname))
+def read_speakers(basepath):
+    dirs = os.listdir(basepath)
 
     females = [d for d in dirs if d[0] == 'f']
     females.sort()
@@ -43,54 +45,38 @@ def read_speakers(dirname):
 
     return (females, males)
 
-def read_utterances(speaker):
-    speaker_list = os.listdir('%s/enroll_1/%s/' % (CORPUS_PATH, speaker))[0]
-    utterances = os.listdir('%s/enroll_1/%s/%s/' % (CORPUS_PATH, speaker, speaker_list))
-    utterances = [utterance for utterance in utterances if utterance.endswith('.wav')]
+def read_utterances(basepath, speaker):
+    speaker_list = os.listdir('%s/%s/' % (basepath, speaker))[0]
+    utterances = os.listdir('%s/%s/%s/' % (basepath, speaker, speaker_list))
+    #utterances = [utterance for utterance in utterances if utterance.endswith('.wav')]
+    utterances = [utterance for utterance in utterances]
     utterances.sort()
 
     return utterances
 
+def base_features(basepath):
+    (females, males) = read_speakers(basepath)
+    # list of list
+    female_utterances_list = [read_utterances(basepath, female) for female in females]
+    male_utterances_list = [read_utterances(basepath, male) for male in males]
 
 def enroll_1():
-    (females, males) = read_speakers('enroll_1')
-    # lists of list
-    female_utterances = [read_utterances(female) for female in females]
-    male_utterances = [read_utterances(male) for male in males]
+    base_features(ENROLL_1)
 
-    # GMM female
-    for utterances in female_utterances:
-        # TODO fazer um "for utterance in utterances: do GMM"
-        print(utterances)
-        print()
-
-    # GMM male
-    for utterances in male_utterances:
-        pass
-
-
-def enroll_2():
-    read_speakers('enroll_2')
-
-
-def imposter():
-    read_speakers('imposter')
+# TODO fazer o mesmo para enroll_2 e imposter
 
 
 if __name__ == '__main__':
     #enroll_1()
-    #enroll_2()
-    #imposter()
+    enroll_2()
+    imposter()
 
     wave = Wave('test.wav')
-    print('signal with', len(wave.signal), 'samples')
-    print()
-
-    framedMFCCs = features.mfcc(wave.signal, numcep=19, highfreq=wave.sample_rate/2)
+    framedMFCCs = features.mfcc(wave.signal, samplerate=wave.sample_rate,
+                                numcep=19, highfreq=wave.sample_rate/2)
     framedMFCCsDelta = features.appendDeltasAllFrames(framedMFCCs)
     framedMFCCsDeltaDelta = features.appendDeltasAllFrames(framedMFCCs, order=2)
 
     print('framedMFCCs:', framedMFCCs.shape)
-    print(framedMFCCs)
     print('framedMFCCs + delta:', framedMFCCsDelta.shape)
     print('framedMFCCs + delta + delta-delta:', framedMFCCsDeltaDelta.shape)
