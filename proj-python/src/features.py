@@ -28,7 +28,7 @@ def mfcc(signal, samplerate=16000, winlen=0.025, winstep=0.01, numcep=13, nfilt=
     """
     (features, energy) = fbank(signal, samplerate, winlen, winstep, nfilt, nfft,
                                lowfreq, highfreq, preemph)
-    features = numpy.log(features)
+    features = numpy.log(features)  # TODO checar se deixa ln ou log10
     features = dct(features, type=2, axis=1, norm='ortho')[:,:numcep]
     features = lifter(features,ceplifter)
 
