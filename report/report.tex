@@ -223,6 +223,12 @@ The second observed effect is that the components of the adapted GMM retain a co
 
 \section{EXPERIMENTS}
 
+The implementation of the GMM-UBM Verificaton Systems was performed in Matlab. A version in Python was tried, in order to compare performances, but due to technical problems it was abandoned. As stated in the introduction, this is a reduced version of \cite{reynolds_et_al_2000}, and our implementation is simpler. The differences are the absence of the Voice Activity Detection (VAD) algorithm and the adaptation of the means, but not the weights and variances. The absence of VAD occurred due to the time spent for each utterance (aprox. 20 minutes). As the corpus has 2592  utterances in Enroll 1 (48 speaker versus 54 utterances), this step became impractical, so we removed it in order to perform a UBM training in a decent time. The same happened to the other utterances.
+
+The adaptation of the means only, occurred due to the advice of \cite{reynolds_et_al_2000}, stating that the adaptation of weights and variances had little effect in the speaker model
+
+The corpus used was the MIT Mobile Device Speaker Verification Corpus, describe in \cite{corpus_paper}, which is divided in three groups: Enroll 1, Enroll 2 and Imposter. The first group is used to train the models. The second and the third are used to test for true speakers and imposter, respectively
+
 
 \section{CONCLUSION}
 
