@@ -99,8 +99,6 @@ The figure below is a simple diagram showing how the speaker detection system is
 
 \section{GMM-UBM VERIFICATION SYSTEM}
 
-The GMM-UBM training is an implementation of GMM used to provide a model for the background, in order to improve the performance of the classifier. In the following subsections the basic GMM and the UBM are described. The model for the speaker (adapted from the UBM) is explained in the next section.
-
 \subsection{Gaussian Mixture Models}
 
 A GMM is a weighted sum of M mixture components of multivariate Gaussians. For a $D$-dimensional feature vector $\vec{x}$, the mixture density used for the likelihood function is defined as
@@ -114,10 +112,10 @@ A GMM is a weighted sum of M mixture components of multivariate Gaussians. For a
 
 \begin{equation}
     \label{eq:gmm}
-    p_i(\vec{x}) = \frac{1}{(2\pi)^\frac{D}{2}|{\Sigma_i}|^\frac{1}{2}}e^{-\frac{1}{2}(\vec{x} - \vec{\mu_i})'(\Sigma_i)^{-1}(\vec{x} - \vec{\mu_i})}
+    p_i(\vec{x}) = \frac{1}{(2\pi)^\frac{D}{2}|\Sigma_i|^\frac{1}{2}}e^{-\frac{1}{2}(\vec{x} - \vec{\mu_i})'(\Sigma_i)^{-1}(\vec{x} - \vec{\mu_i})}
 \end{equation}
 
-\noindent and satisfying the constraint $\sum_{i=1}^M w_i = 1$. Given the training vectors, the maximum likelihood model parameters are estimated using the iterative expectation-maximization (EM) algorithm, refining the GMM parameters to monotonically increase the likelihood of the estimated model for the observed feature vectors.
+\noindent and satisfying the constraint $\sum_{i=1}^M w_i = 1$. Experimental results showed that the best $\Sigma_i$ is a diagonal matrix, because it produces a better computation performance. Given the training vectors, the maximum likelihood model parameters are estimated using the iterative expectation-maximization (EM) algorithm, refining the GMM parameters to monotonically increase the likelihood of the estimated model for the observed feature vectors.
 
 Given a utterance $X$ divided in independent vectors $X = \{\vec{x_1}, \dots, \vec{x_T}\}$, where each $\vec{x_t}$ is a vector of MFCCs for a frame $t$, the average loglikelihood of a model $\lambda$ is computed as
 
@@ -160,7 +158,65 @@ The approach of UBM training depends of the kind of data needed to classify. If 
 
 \subsection{Adaptation of Speaker Model}
 
+The logical approach is to train a pair of speaker model and UBM for each speaker. This way, we can guarantee that the speaker model is the best representation of the speaker and the UBM (without the speaker utterances) is the best representation for the rest. However, this approach is too expensive and doesn't show any significant advantage.
 
+The best way to create a speaker model is by adaptation from a well-trained UBM. This provides a tighter coupling between the speaker’s model and UBM which not only produces better performance than decoupled models, but, as discussed later in this section, also allows for a fast-scoring technique. Like the EM algorithm, the adaption is a two step estimation process. The first step is identical to the expectation step of the EM algorithm, where estimates of the sufficient statistics of the speaker’s training data are computed for each mixture in the UBM. Unlike the second step of the EM algorithm, for adaptation these new sufficient statistic estimates are then combined with the old sufficient statistics from the UBM mixture parameters using a data-dependent mixing coefficient.
+
+Given a UBM and training vectors from the hypothesized speaker, X = {x1 , . . . , xT }, we first determine the probabilistic alignment of the training vectors into the UBM mixture components
+
+\begin{equation}
+    \label{eq:prob_alignment}
+    Pr(i|\vec{x_t}) = \frac{w_i p_i(\vec{x_t})}{\sum_{j=1}^M w_j p_j(\vec{x_t})}
+\end{equation}
+
+\noindent We then use \equationref{prob_alignment} to compute the sufficient statistics for the weight, mean, and variance parameters:
+
+\begin{equation}
+    \label{eq:sum_prob_alignment}
+    n_i = \sum_{t=1}^TPr(i|\vec{x_t})
+\end{equation}
+
+\begin{equation}
+    \label{eq:mean_new}
+    E_i(\vec{x}) = \frac{1}{n_i} \sum_{t=1}^T Pr(i|\vec{x_t})\vec{x_t}
+\end{equation}
+
+\begin{equation}
+    \label{eq:var_new}
+    E_i(\vec{x}^2) = \frac{1}{n_i} \sum_{t=1}^T Pr(i|\vec{x_t})\vec{x_t}^2
+\end{equation}
+
+Finally, these new sufficient statistics from the training data are used to update the old UBM sufficient statistics for mixture i to create the adapted parameters for mixture $i$ with the equations:
+
+\begin{equation}
+    \label{eq:weight_adapt}
+    \hat{w_i} = [\alpha_i \frac{n_i}{T} + (1 - \alpha_i)w_i]\gamma
+\end{equation}
+
+\begin{equation}
+    \label{eq:mean_adapt}
+    \vec{\hat{\mu_i}} = \alpha_i E_i(\vec{x}) + (1 - \alpha_i)\vec{\mu_i}
+\end{equation}
+
+\begin{equation}
+    \label{eq:var_adapt}
+    \vec{\hat{\sigma_i^2}} = \alpha_i E_i(\vec{x^2}) + (1 - \alpha_i)(\vec{\sigma_i^2} + \vec{\mu_i^2}) - \vec{\hat{\mu_i^2}}
+\end{equation}
+
+The coefficient $\alpha_i$ controls the balance between old and new estimates. The scale factor, $\gamma$, is computed over all adapted mixture weights to ensure they sum to unity. The $\alpha_i$ coefficient is defined as
+
+\begin{equation}
+    \label{eq:alpha_coeff}
+    \alpha_i = \frac{n_i}{n_i + r}
+\end{equation}
+
+\noindent where $r$ is a fixed relevance factor. The coefficient $\alpha_i$ is between 0 and 1. When close to 0, the adaptation is minimum, and when close to 1, the new parameters are more emphasised. A common value for the relevance factor is $r = 16$.
+
+Since the adaptation is data dependent, not all Gaussians in the UBM are adapted during speaker model training. Knowing the amount of unadapted Gaussians can be an important factor in reduced model storage requirements, since it is possible to efficiently store models using only the difference with the UBM.
+
+
+
+\subsection{Log-Likelihood Ratio Computation}
 
 
 \section{EXPERIMENTS}
