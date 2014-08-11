@@ -20,11 +20,11 @@
 \graphicspath{{images/}}
 \renewcommand{\abstractname}{\normalsize\bfseries\filcenter ABSTRACT}
 \titleformat*{\section}{\normalsize\bfseries\filcenter}
-\titleformat*{\subsection}{\small\bfseries\filcenter}
+\titleformat*{\subsection}{\normalsize\bfseries\filcenter}
 \renewcommand{\refname}{\normalsize\bfseries\filcenter REFERENCES}
 \renewcommand{\figurename}{\small Figure}
-\newcommand{\figureref}[1]{\textit{Figure \ref{fig:#1}}}
-\newcommand{\equationref}[1]{\textit{Equation \ref{eq:#1}}}
+\newcommand{\figureref}[1]{Fig. (\ref{fig:#1})}
+\newcommand{\equationref}[1]{Eq. (\ref{eq:#1})}
 \newcommand{\bigsum}{\displaystyle\sum}
 
 
@@ -56,25 +56,52 @@ With the growing advancements in IT, biometric systems became more common and, i
 
 A GMM is a generic probabilistic model for multivariate densities capable of representing arbitrary densities, making it well suited for unconstrained text-independent applications. The use of GMMs for this type of speaker identification was first described in \cite{rose_reynolds_1990}, and since then this approach has gained popularity and became the state of the art in text-independent speaker recognition applications. This fact is evidenced by numerous papers published in majors conferences, such as International Conference on Acoustics, Speech, and Signal Processing (ICASSP), the International Speech Communication Association (ISCA, formerly known as Eurospeech), and the International Conference on Spoken Language Processing (ICSLP), as well as articles in ESCA Transactions on Speech Communications and IEEE Transactions on Speech and Audio Processing.
 
-This paper is a reduced reproduction of \cite{reynolds_quatieri_dunn_2000}, in which we present a Gaussian Mixture Model-Universal Background Model (GMM-UBM) and a GMM adapted from the GMM-UBM. These models are used to verify a speaker using the Likelihood-Ratio Test. The rest of the document is divided in the folowing sections: 2) \textit{Features Extraction}, in which the MFCC technique is briefly described; 3) \textit{GMM-UBM Training}, showing how to create a model to represent the utterances of all possible speakers; 4) \textit{Adaptation of Speaker Model}, showing how to use the GMM-UBM to derive a model for each speaker; 5) \textit{Likelihood-Ratio Test}, calculating a measure of how different a speaker is from the background; 6) \textit{Experiments} executed to validate the approach chosen; and 7) \textit{Conclusion}, in which the final considerations are given. The \textit{References} section at the end contains all the sources used to write the paper and conduct the experiments.
+This paper is a reduced reproduction of \cite{reynolds_et_al_2000}, in which we present a Gaussian Mixture Model-Universal Background Model (GMM-UBM) and a GMM adapted from the GMM-UBM. These models are used to verify a speaker using the Likelihood-Ratio Test. The rest of the paper is devided in an explanation of the Likelihood Test, the GMM-UBM Verification System, the Experiments and later, the Conclusion.
 
 
-\section{FEATURES EXTRACTION}
-\label{feat_ext}
+\section{LIKELIHOOD TEST}
+\label{likelihood_test}
 
-The features extraction process transforms a speech signal into a vector containing the information needed to perform the verification/identification. In the case of text-independent verification, as shown in \cite{pinheiro_2013}, the features extracted must have: high variation inter-speakers and low variation intra-speakers; robustness in the presence of noise and distortion; be frequent and natural in speech; easy to measure and to extract from speech signal; hard to be artificially produced; be immutable, even in the presence of sickness or aging.
+Given a speech $Y$ and a speaker $S$, the speaker detection test can be restated as a basic hypothesis test between $H_0$ and $H_1$, where
 
-In this paper we used the Mel-Frequency Cepstral Coefficients (MFCCs) \cite{davis_mermelstein_1980} to perform the feature extraction, associated to their time derivatives and to the logarithm of the signal's energy. The Mel scale is derived from researches in human listening and is given by
+\begin{description}\itemsep 0pt \parskip 1pt
+    \item[$H_0$:] $Y$ is from the hypothesized speaker $S$
+    \item[$H_1$:] $Y$ is \underline{not} from the hypothesized speaker $S$
+\end{description}
+
+\noindent The optimal test to decide between these two hypotheses is a likelihood ratio test given by
 
 \begin{equation}
-    \label{eq:hertz_to_mel}
-    mel = 2595\log_{10} (1 + \frac{f}{700})
+    \label{eq:likelihood_ratio_test}
+    \frac{p(Y|H_0)}{p(Y|H_1)} = \left\{
+        \begin{array}{l l}
+        \geq \theta \quad\quad\quad \text{accept $H_0$}\\
+        < \theta \quad\quad\quad \text{reject $H_0$}
+        \end{array} \right.
 \end{equation}
 
-\noindent where \textit{f} is the frequency in Hertz. The log-scale improves the readability of lower frequencies, making it well suited for this kind of problem (the majority of human voice is under 4kHz). Details about the MFCCs extraction can be found in \cite{pinheiro_2013}.
+\noindent Naming the model for $H_0$ as $\lambda_{hyp}$, and the model for $H_1$ as $\lambda_{\overline{hyp}}$, the logarithm of \equationref{likelihood_ratio_test} is given by
+
+\begin{equation}
+    \label{eq:log_likelihood_ratio_test}
+    \Lambda(X) = \log p(X|\lambda_{hyp}) - \log p(|\lambda_{\overline{hyp}})
+\end{equation}
+
+The figure below is a simple diagram showing how the speaker detection system is organized. First the speech signal is preprocessed, with a vector of features extracted. These features are used to create the models for the speaker ($\lambda_{hyp}$) and the background ($\lambda_{\overline{hyp}}$). Later, the likelihood from each model is calculated and compared to classify the speech segment $Y$ as spoken or not by the speaker $S$.
+
+\begin{figure}[h]
+    \label{fig:speaker_detection_system}
+    \centering
+    \includegraphics[scale=0.3]{speaker-detection-system}
+    \caption{\textit{Likelihood ratio-based speaker detection system.}}
+\end{figure}
 
 
-\section{GMM-UBM TRAINING}
+\section{GMM-UBM VERIFICATION SYSTEM}
+
+The GMM-UBM training is an implementation of GMM used to provide a model for the background, in order to improve the performance of the classifier. In the following subsections the basic GMM and the UBM are described. The model for the speaker (adapted from the UBM) is explained in the next section.
+
+\subsection{Gaussian Mixture Models}
 
 A GMM is a weighted sum of M mixture components of multivariate Gaussians. For a $D$-dimensional feature vector $\vec{x}$, the mixture density used for the likelihood function is defined as
 
@@ -99,13 +126,41 @@ Given a utterance $X$ divided in independent vectors $X = \{\vec{x_1}, \dots, \v
     \log p(X|\lambda)_{avg} = \frac{1}{T}\sum_{t=1}^T \log p(\vec{x_t}|\lambda)
 \end{equation}
 
-\noindent For a corpus with more than one utterance, $X$ is said to be the concatenation of the various utterances.
+\noindent where $\log p(\vec{x_t}|\lambda)$ is computed as in \equationref{gmm_likelihood}. For a corpus with more than one utterance, $X$ is the concatenation of the various utterances.
+
+\subsection{Front-End Processing}
+
+The front-end analysis occurs in several steps. First, the speech is segmented into frames by a 20-ms window progressing at a 10-ms frame rate. A speech activity detector is then used to discard silence–noise frames. Later the features are extracted.
+
+The features extraction process transforms a speech signal into a vector containing the information needed to perform the verification/identification. In the case of text-independent verification, as shown in \cite{pinheiro_2013}, the features extracted must have: high variation inter-speakers and low variation intra-speakers; robustness in the presence of noise and distortion; be frequent and natural in speech; easy to measure and to extract from speech signal; hard to be artificially produced; be immutable, even in the presence of sickness or aging.
+
+In this paper we used the Mel-Frequency Cepstral Coefficients (MFCCs) \cite{davis_mermelstein_1980} to perform the feature extraction, associated to their time derivatives and to the logarithm of the signal's energy. The Mel scale is derived from researches in human listening and is given by
+
+\begin{equation}
+    \label{eq:hertz_to_mel}
+    mel = 2595\log_{10} (1 + \frac{f}{700})
+\end{equation}
+
+\noindent where \textit{f} is the frequency in Hertz. The log-scale improves the readability of lower frequencies, making it well suited for this kind of problem (the majority of human voice is under 4kHz). Details about the MFCCs extraction can be found in \cite{pinheiro_2013}.
+
+\subsection{Universal Background Model}
+
+In the GMM-UBM system we use a single, speaker-independent background model to represent $p(X|\lambda_{\overline{hyp}})$. The UBM is a large GMM trained to represent the speaker-independent distribution of features.
+
+The approach of UBM training depends of the kind of data needed to classify. If the gender of the speaker to be identified is known a priori, there is no sense in test it against a UBM for the other gender (unless when testing the system's robustness). There are two approachs, as shown in the figure below.
+
+\begin{figure}[h]
+    \label{fig:gmm_ubm_training}
+    \centering
+    \includegraphics[scale=0.4]{gmm-ubm-training}
+    \caption{\textit{Training of UBM with separation (b) and no separation (a) of gender.}}
+\end{figure}
+
+\noindent Notice the training is performed using the EM algorithm, as shown in \cite{dempster_1977}. Commonly the training algorithm for a model $\lambda$ stops when $p(X|\lambda^{(k)}) - p(X|\lambda^k) < 10^{-5}$.
+
+\subsection{Adaptation of Speaker Model}
 
 
-\section{ADAPTATION OF SPEAKER MODEL}
-
-
-\section{LIKELIHOOD TEST}
 
 
 \section{EXPERIMENTS}
@@ -123,18 +178,12 @@ Given a utterance $X$ divided in independent vectors $X = \{\vec{x_1}, \dots, \v
         1990,
         pp. 293–296.
 
-    \bibitem{reynolds_quatieri_dunn_2000}
+    \bibitem{reynolds_et_al_2000}
         D. A. Reynolds et al.,
         ``Speaker verification using adapted gaussian mixture models,"
         \textit{Digital Signal Processing}, vol. 10,
         (1-3) pp. 19-41,
         2000.
-
-    \bibitem{corpus_paper}
-        R. H. Woo et al.,
-        ``The MIT Mobile Device Speaker Verification Corpus: Data Collection and Preliminary Experiments,"
-        in \textit{The Speaker and Language Recognition Workshop (IEEE Odyssey 2006),}
-        San Juan, Puerto Rico, 2006.
 
     \bibitem{pinheiro_2013}
         H. N. B. Pinheiro,
@@ -150,6 +199,17 @@ Given a utterance $X$ divided in independent vectors $X = \{\vec{x_1}, \dots, \v
         vol. 28
         pp. 357-366,
         Aug. 1980.
+
+    \bibitem{dempster_1977}
+        A. Dempster et al.,
+        Maximum likelihood from incomplete data via the EM algorithm,
+        \textit{J. Roy. Stat. Soc.} \textbf{39} (1977), 1–38.
+
+    \bibitem{corpus_paper}
+        R. H. Woo et al.,
+        ``The MIT Mobile Device Speaker Verification Corpus: Data Collection and Preliminary Experiments,"
+        in \textit{The Speaker and Language Recognition Workshop (IEEE Odyssey 2006),}
+        San Juan, Puerto Rico, 2006.
 
 \end{thebibliography}
 
