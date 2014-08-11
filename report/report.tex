@@ -221,13 +221,22 @@ The log-likelihood ratio for a test sequence of feature vectors $X$ is computed 
 The second observed effect is that the components of the adapted GMM retain a correspondence with the mixtures of the UBM, so that vectors close to a particular mixture in the UBM will also be close to the corresponding mixture in the speaker model. Using these two effects, a fast scoring procedure operates as follows: For each feature vector, determine the top $C$ scoring mixtures in the UBM and compute UBM likelihood using only these top $C$ mixtures. Next, score the vector against only the corresponding $C$ components in the adapted speaker model to evaluate the speaker’s likelihood. For a UBM with $M$ mixtures, this requires only $M + C$ Gaussian computations per feature vector compared to $2M$ Gaussian computations for normal likelihood ratio evaluation. When there are multiple hypothesized speaker models for each test segment, the savings become even greater. In the GMM-UBM system, we use a value of $C = 5$.
 
 
-\section{EXPERIMENTS}
+\section{EXPERIMENT}
 
-The implementation of the GMM-UBM Verificaton Systems was performed in Matlab. A version in Python was tried, in order to compare performances, but due to technical problems it was abandoned. As stated in the introduction, this is a reduced version of \cite{reynolds_et_al_2000}, and our implementation is simpler. The differences are the absence of the Voice Activity Detection (VAD) algorithm and the adaptation of the means, but not the weights and variances. The absence of VAD occurred due to the time spent for each utterance (aprox. 20 minutes). As the corpus has 2592  utterances in Enroll 1 (48 speaker versus 54 utterances), this step became impractical, so we removed it in order to perform a UBM training in a decent time. The same happened to the other utterances.
+The implementation of the GMM-UBM Verificaton Systems was performed in Matlab. As stated in the introduction, this is a reduced version of \cite{reynolds_et_al_2000}, and our implementation is simpler. The corpus used was the MIT Mobile Device Speaker Verification Corpus, describe in \cite{corpus_paper}, which is divided in three groups: training data, speaker-testing data and imposter data. The first group is used to train the models. The second and the third to test for true and imposter speakers, respectively. The differences are the absence of the Voice Activity Detection (VAD) algorithm and the reproduction of only one experiment.
 
-The adaptation of the means only, occurred due to the advice of \cite{reynolds_et_al_2000}, stating that the adaptation of weights and variances had little effect in the speaker model
+The experiment reproduced was the adaptation of the vector of means in a gender-independent model. The model was constructed training the male and female submodels separately, with 256 mixtures each, and then combining them in a single model with 512 mixtures. The features extracted were the MFCCs and its first and second order derivatives (the ``delta" and ``delta-delta" coefficients) \cite{pinheiro_2013}. The utterances were concatenated in a very large 2d-array of features, used to traing the UBM and adapt the speaker's GMM.
 
-The corpus used was the MIT Mobile Device Speaker Verification Corpus, describe in \cite{corpus_paper}, which is divided in three groups: Enroll 1, Enroll 2 and Imposter. The first group is used to train the models. The second and the third are used to test for true speakers and imposter, respectively
+After the training and adaptation steps, the true speakers and the imposters were tested, generating the rates of false rejection (when the correct speaker is rejected) and false acceptances (when a imposter is accepted as a true speaker). The rates vary with the threshold set, generating the curve shown below
+
+\begin{figure}[h]
+    \label{fig:det}
+    \centering
+    \includegraphics[scale=0.45]{det}
+    \caption{\textit{DET curve, showing the errors in classification.}}
+\end{figure}
+
+\noindent The Equal Error Rate (EER) found is 40,9\%, a value high but possible due to the lack of VAD algorithm in the preprocessing step.
 
 
 \section{CONCLUSION}
