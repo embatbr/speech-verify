@@ -50,16 +50,13 @@ Colocar o abstract aqui
 \section{INTRODUCTION}
 \label{intro}
 
-Traditionally, strategies for verification and identification of a individual are based on some foreknowledge, like a password or a personal identification number. In other cases physical objects (like keys or cards) are used. The Achilles heel of theses strategies is the verification/identification object itself. Once a key is lost or a password is forgotten, the person cannot prove to be herself. In cases of theft, a malicious agent can easily impersonate the victim.
+Traditionally, strategies for verification and identification of a individual are based on some foreknowledge, like a password or a personal identification number. In other cases physical objects are used (keys, cards, etc.). The Achilles heel of these strategies is the verification/identification object itself. Once a key is lost or a password is forgotten, the person cannot prove to be herself. In cases of theft, a malicious agent can easily impersonate the victim.
 
-With the growing advancements in IT, biometric systems became more common and, in a self fed loop, more precise. The biometry of the voice is one of the most reliable and easy to use. To extract its features, the person just needs to speak, and if the system is well designed, it is very unlikely to an imposter be granted access. Many techniques based on statistical models exists, each one focused in a particular set of subproblems. Here we will use the Gaussian Mixture Models (GMM).
+With the growing advancements in IT, biometric systems became more common and, in a self fed loop, more precise. The biometry of the voice is one of the most reliable and easy to use. To extract its features the person just needs to speak, and if the system is well designed it is very unlikely to an imposter be granted access. Many techniques based on statistical models exists, each one focused in a particular set of subproblems. Here we will use the Gaussian Mixture Models (GMM).
 
-A GMM is a generic probabilistic model for multivariate densities capable of representing arbitrary densities, making it well suited for unconstrained text-independent applications. The use of GMMs for this type of speaker identification was first described in \cite{rose_reynolds_1990}, and since then, this approach has gained popularity and became the state of the art in text-independent speaker recognition applications. This fact is evidenced by numerous papers published in majors conferences, such as International Conference on Acoustics, Speech, and Signal Processing (ICASSP), the International Speech Communication Association (ISCA, formerly known as Eurospeech), and the International Conference on Spoken Language Processing (ICSLP), as well as articles in ESCA Transactions on Speech Communications and IEEE Transactions on Speech and Audio Processing.
+A GMM is a generic probabilistic model for multivariate densities capable of representing arbitrary densities, making it well suited for unconstrained text-independent applications. The use of GMMs for this type of speaker identification was first described in \cite{rose_reynolds_1990}, and since then this approach has gained popularity and became the state of the art in text-independent speaker recognition applications. This fact is evidenced by numerous papers published in majors conferences, such as International Conference on Acoustics, Speech, and Signal Processing (ICASSP), the International Speech Communication Association (ISCA, formerly known as Eurospeech), and the International Conference on Spoken Language Processing (ICSLP), as well as articles in ESCA Transactions on Speech Communications and IEEE Transactions on Speech and Audio Processing.
 
-This paper is a reduced reproduction of \cite{reynolds_quatieri_dunn_2000}, in which we present a Gaussian Mixture Model-Universal Background Model (GMM-UBM) and a GMM adapted from the GMM-UBM. These models are used to verify a speaker using the Likelihood-Ratio Test. The explanation is divided in the folowing sections: 2) \textit{Features Extraction}, in which the MFCC technique is briefly described; 3) \textit{GMM-UBM Training}, showing how to create a model to represent the utterances of all possible speakers; 4) \textit{Adaptation of Speaker Model}, showing how to use the GMM-UBM to derive a model for each speaker; 5) \textit{Likelihood-Ratio Test}, calculating a measure of how different a speaker is from the background; 6) \textit{Experiments} executed to validate the approach chosen; and 7) \textit{Conclusion}, in which the final considerations are given. The \textit{References} section at the end contains all the sources used to write the paper and conduct the experiments.
-
-% TODO colocar na seção de experimentos
-% The base used is MIT Mobile Device Speaker Verification Corpus, composed of three sessions of utterances: training (Enroll\_Session\_1), true speakers test (Enroll\_Session\_2) and imposters test (Imposter). The Enroll sessions contains 48 speakers and the Imposter session contains 40 speakers, with 59 utterances each. More details are given in \cite{corpus_paper}.
+This paper is a reduced reproduction of \cite{reynolds_quatieri_dunn_2000}, in which we present a Gaussian Mixture Model-Universal Background Model (GMM-UBM) and a GMM adapted from the GMM-UBM. These models are used to verify a speaker using the Likelihood-Ratio Test. The rest of the document is divided in the folowing sections: 2) \textit{Features Extraction}, in which the MFCC technique is briefly described; 3) \textit{GMM-UBM Training}, showing how to create a model to represent the utterances of all possible speakers; 4) \textit{Adaptation of Speaker Model}, showing how to use the GMM-UBM to derive a model for each speaker; 5) \textit{Likelihood-Ratio Test}, calculating a measure of how different a speaker is from the background; 6) \textit{Experiments} executed to validate the approach chosen; and 7) \textit{Conclusion}, in which the final considerations are given. The \textit{References} section at the end contains all the sources used to write the paper and conduct the experiments.
 
 
 \section{FEATURES EXTRACTION}
@@ -74,20 +71,47 @@ In this paper we used the Mel-Frequency Cepstral Coefficients (MFCCs) \cite{davi
     mel = 2595\log_{10} (1 + \frac{f}{700})
 \end{equation}
 
-\noindent where \textit{f} is the frequency in Hertz. The log-scale improves the readability of lower frequencies, making it well suited for this kind of problem (the majority of human voice is under 4kHz).
+\noindent where \textit{f} is the frequency in Hertz. The log-scale improves the readability of lower frequencies, making it well suited for this kind of problem (the majority of human voice is under 4kHz). Details about the MFCCs extraction can be found in \cite{pinheiro_2013}.
 
-\figureref{mfcc_flow} shows the MFCC extraction flow, receiving a representation of the physical signal and returning a vector of coefficients containing representing the almost unique characteristics of the speaker's voice.
 
-\begin{description}
-  \item[Pre-emphasis]
-\end{description}
+\section{GMM-UBM TRAINING}
 
-\begin{figure}[h]
-    \label{fig:mfcc_flow}
-    \centering
-    \includegraphics[scale=0.5]{mfcc-flow}
-    \caption{\textit{Block diagram of MFCCs extraction from a speech signal.}}
-\end{figure}
+A GMM is a weighted sum of M mixture components of multivariate Gaussians. For a $D$-dimensional feature vector $\vec{x}$, the mixture density used for the likelihood function is defined as
+
+\begin{equation}
+    \label{eq:gmm_likelihood}
+    p(\vec{x}|\lambda) = \sum_{i=1}^M w_i p_i(\vec{x})
+\end{equation}
+
+\noindent a weighted linear combination of $M$ unimodal Gaussian densities, $p_i(\vec{x})$, each parameterized by a mean $D\times 1$ vector, $\mu_i$ , and a $D\times D$ covariance matrix, $\Sigma_i$;
+
+\begin{equation}
+    \label{eq:gmm}
+    p_i(\vec{x}) = \frac{1}{(2\pi)^\frac{D}{2}|{\Sigma_i}|^\frac{1}{2}}e^{-\frac{1}{2}(\vec{x} - \vec{\mu_i})'(\Sigma_i)^{-1}(\vec{x} - \vec{\mu_i})}
+\end{equation}
+
+\noindent and satisfying the constraint $\sum_{i=1}^M w_i = 1$. Given the training vectors, the maximum likelihood model parameters are estimated using the iterative expectation-maximization (EM) algorithm, refining the GMM parameters to monotonically increase the likelihood of the estimated model for the observed feature vectors.
+
+Given a utterance $X$ divided in independent vectors $X = \{\vec{x_1}, \dots, \vec{x_T}\}$, where each $\vec{x_t}$ is a vector of MFCCs for a frame $t$, the average loglikelihood of a model $\lambda$ is computed as
+
+\begin{equation}
+    \label{eq:loglikelihood_lambda}
+    \log p(X|\lambda)_{avg} = \frac{1}{T}\sum_{t=1}^T \log p(\vec{x_t}|\lambda)
+\end{equation}
+
+\noindent For a corpus with more than one utterance, $X$ is said to be the concatenation of the various utterances.
+
+
+\section{ADAPTATION OF SPEAKER MODEL}
+
+
+\section{LIKELIHOOD TEST}
+
+
+\section{EXPERIMENTS}
+
+
+\section{CONCLUSION}
 
 
 \begin{thebibliography}{9}
