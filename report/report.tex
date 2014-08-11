@@ -84,7 +84,7 @@ Given a speech $Y$ and a speaker $S$, the speaker detection test can be restated
 
 \begin{equation}
     \label{eq:log_likelihood_ratio_test}
-    \Lambda(X) = \log p(X|\lambda_{hyp}) - \log p(|\lambda_{\overline{hyp}})
+    \Lambda(X) = \log p(X|\lambda_{hyp}) - \log p(X|\lambda_{\overline{hyp}})
 \end{equation}
 
 The figure below is a simple diagram showing how the speaker detection system is organized. First the speech signal is preprocessed, with a vector of features extracted. These features are used to create the models for the speaker ($\lambda_{hyp}$) and the background ($\lambda_{\overline{hyp}}$). Later, the likelihood from each model is calculated and compared to classify the speech segment $Y$ as spoken or not by the speaker $S$.
@@ -214,9 +214,11 @@ The coefficient $\alpha_i$ controls the balance between old and new estimates. T
 
 Since the adaptation is data dependent, not all Gaussians in the UBM are adapted during speaker model training. Knowing the amount of unadapted Gaussians can be an important factor in reduced model storage requirements, since it is possible to efficiently store models using only the difference with the UBM.
 
-
-
 \subsection{Log-Likelihood Ratio Computation}
+
+The log-likelihood ratio for a test sequence of feature vectors $X$ is computed as $\Lambda(X) = \log p(X|\lambda_{hyp}) - \log p(X|\lambda_{\overline{hyp}})$. The fact that the hypothesized speaker model was adapted from the UBM, however, allows a faster scoring method than merely evaluating the two GMMs. This fast scoring approach is based on two observed effects. The first is that when a large GMM is evaluated for a feature vector, only a few of the mixtures contribute significantly to the likelihood value. This is because the GMM represents a distribution over a large space but a single vector will be near only a few components of the GMM. Thus, likelihood values can be approximated very well using only the top $C$ best scoring mixture components.
+
+The second observed effect is that the components of the adapted GMM retain a correspondence with the mixtures of the UBM, so that vectors close to a particular mixture in the UBM will also be close to the corresponding mixture in the speaker model. Using these two effects, a fast scoring procedure operates as follows: For each feature vector, determine the top $C$ scoring mixtures in the UBM and compute UBM likelihood using only these top $C$ mixtures. Next, score the vector against only the corresponding $C$ components in the adapted speaker model to evaluate the speaker’s likelihood. For a UBM with $M$ mixtures, this requires only $M + C$ Gaussian computations per feature vector compared to $2M$ Gaussian computations for normal likelihood ratio evaluation. When there are multiple hypothesized speaker models for each test segment, the savings become even greater. In the GMM-UBM system, we use a value of $C = 5$.
 
 
 \section{EXPERIMENTS}
