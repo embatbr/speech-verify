@@ -227,7 +227,7 @@ The implementation of the GMM-UBM Verificaton Systems was performed in Matlab. A
 
 The experiment reproduced was the adaptation of the vector of means in a gender-independent model. The model was constructed training the male and female submodels separately, with 256 mixtures each, and then combining them in a single model with 512 mixtures. The features extracted were the MFCCs and its first and second order derivatives (the ``delta" and ``delta-delta" coefficients) \cite{pinheiro_2013}. The utterances were concatenated in a very large 2d-array of features, used to traing the UBM and adapt the speaker's GMM.
 
-After the training and adaptation steps, the true speakers and the imposters were tested, generating the rates of false rejection (when the correct speaker is rejected) and false acceptances (when a imposter is accepted as a true speaker). These rates vary with the threshold and are plotted in a Detection Error Tradeoff (DET) curve, a graphical plot of error rates for binary classification systems, plotting false reject rate vs. false accept rate. Our DET curve is shown in Figure 3.
+After the training and adaptation steps, the true speakers and the imposters were tested, generating the rates of false rejection (when the correct speaker is rejected) and false acceptances (when a imposter is accepted as a true speaker). These rates vary with the threshold and are plotted in a Detection Error Tradeoff (DET) curve, a graphical plot of error rates for binary classification systems, plotting false reject rate vs. false accept rate. The DET curve we obtained is shown in Figure 3.
 
 \begin{figure}[h]
     \label{fig:det}
