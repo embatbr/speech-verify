@@ -87,7 +87,7 @@ Given a speech $Y$ and a speaker $S$, the speaker detection test can be restated
     \Lambda(X) = \log p(X|\lambda_{hyp}) - \log p(X|\lambda_{\overline{hyp}})
 \end{equation}
 
-The figure below is a simple diagram showing how the speaker detection system is organized. First the speech signal is preprocessed, with a vector of features extracted. These features are used to create the models for the speaker ($\lambda_{hyp}$) and the background ($\lambda_{\overline{hyp}}$). Later, the likelihood from each model is calculated and compared to classify the speech segment $Y$ as spoken or not by the speaker $S$.
+Figure 1 is a simple diagram showing how the speaker detection system is organized. First the speech signal is preprocessed, with a vector of features extracted. These features are used to create the models for the speaker ($\lambda_{hyp}$) and the background ($\lambda_{\overline{hyp}}$). Later, the likelihood from each model is calculated and compared to classify the speech segment $Y$ as spoken or not by the speaker $S$.
 
 \begin{figure}[h]
     \label{fig:speaker_detection_system}
@@ -145,7 +145,7 @@ In this paper we used the Mel-Frequency Cepstral Coefficients (MFCCs) \cite{davi
 
 In the GMM-UBM system we use a single, speaker-independent background model to represent $p(X|\lambda_{\overline{hyp}})$. The UBM is a large GMM trained to represent the speaker-independent distribution of features.
 
-The approach of UBM training depends of the kind of data needed to classify. If the gender of the speaker to be identified is known a priori, there is no sense in test it against a UBM for the other gender (unless when testing the system's robustness). There are two approachs, as shown in the figure below.
+The approach of UBM training depends of the kind of data needed to classify. If the gender of the speaker to be identified is known a priori, there is no sense in test it against a UBM for the other gender (unless when testing the system's robustness). There are two approachs, as shown in the Figure 2.
 
 \begin{figure}[h]
     \label{fig:gmm_ubm_training}
@@ -227,7 +227,7 @@ The implementation of the GMM-UBM Verificaton Systems was performed in Matlab. A
 
 The experiment reproduced was the adaptation of the vector of means in a gender-independent model. The model was constructed training the male and female submodels separately, with 256 mixtures each, and then combining them in a single model with 512 mixtures. The features extracted were the MFCCs and its first and second order derivatives (the ``delta" and ``delta-delta" coefficients) \cite{pinheiro_2013}. The utterances were concatenated in a very large 2d-array of features, used to traing the UBM and adapt the speaker's GMM.
 
-After the training and adaptation steps, the true speakers and the imposters were tested, generating the rates of false rejection (when the correct speaker is rejected) and false acceptances (when a imposter is accepted as a true speaker). The rates vary with the threshold set, generating the curve shown below
+After the training and adaptation steps, the true speakers and the imposters were tested, generating the rates of false rejection (when the correct speaker is rejected) and false acceptances (when a imposter is accepted as a true speaker). These rates vary with the threshold and are plotted in a Detection Error Tradeoff (DET) curve, a graphical plot of error rates for binary classification systems, plotting false reject rate vs. false accept rate. Our DET curve is shown in Figure 3.
 
 \begin{figure}[h]
     \label{fig:det}
@@ -236,7 +236,7 @@ After the training and adaptation steps, the true speakers and the imposters wer
     \caption{\textit{DET curve, showing the errors in classification.}}
 \end{figure}
 
-\noindent The Equal Error Rate (EER) found is 40,9\%, a value high but possible due to the lack of VAD algorithm in the preprocessing step.
+\noindent The Equal Error Rate (EER) is the point of the DET curve where both the rates of false jection and false acceptance are equal. Due to the nature of the curve, this is the point closer to the origin. We found a ERR of 40,9\%, a value high but possible due to the lack of VAD algorithm in the preprocessing step.
 
 
 \section{CONCLUSIONS}
