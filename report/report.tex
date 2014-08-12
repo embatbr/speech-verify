@@ -40,9 +40,9 @@ Recife, PE, Brazil -- www.cin.ufpe.br\\
 
 \begin{abstract}
 \begin{itshape}
-Colocar o abstract aqui
+In this paper we conduct a reproduction of MIT Lincoln Laboratory's Gaussian mixture model (GMM)-based speaker verification system used successfully in several NIST Speaker Recognition Evaluations(SREs) implemented by D. A. Reynolds. The system is built around the likelihood ratio test for verification, using simple but effective GMMs for likelihood functions, a universal background model (UBM) for alternative speaker representation, and a form of Bayesian adaptation to derive speaker models from the UBM.\\
 
-\noindent\textbf{keywords}: colocar keywords aqui
+\noindent\textbf{keywords}: speaker recognition; Gaussian mixture models; likelihood ratio detector; universal background model;
 \end{itshape}
 \end{abstract}
 
@@ -232,14 +232,20 @@ After the training and adaptation steps, the true speakers and the imposters wer
 \begin{figure}[h]
     \label{fig:det}
     \centering
-    \includegraphics[scale=0.45]{det}
+    \includegraphics[scale=0.2]{det}
     \caption{\textit{DET curve, showing the errors in classification.}}
 \end{figure}
 
 \noindent The Equal Error Rate (EER) found is 40,9\%, a value high but possible due to the lack of VAD algorithm in the preprocessing step.
 
 
-\section{CONCLUSION}
+\section{CONCLUSIONS}
+
+In this paper we have described the major elements of the GMM-UBM system used for high-accuracy speaker recognition. The GMM-UBM system is built around the optimal likelihood ratio test for detection, using simple but effective Gaussian mixture models for likelihood functions, a universal background model for representing the competing alternative speakers, and a form of Bayesian adaptation to derive hypothesized speaker models.
+
+We notice the major role of the preprocessing step, a reflection of our high error rate. Also, we learned how to conduct a experiment with a large database, that demanded a non-usual approach (pure programming). The crucial parts were the UBM training (due to the time consumption) and the Speaker Adaptation step (the difference brought by \cite{reynolds_et_al_2000}).
+
+The next works will focus on implementing a VAD algorithm and improve the speed of UBM training.
 
 
 \begin{thebibliography}{9}
