@@ -1,5 +1,7 @@
 proj-python/corpus/
 proj-python/src/__pycache__/
+proj-python/src/*.out
+proj-python/src-old/__pycache__/
 report/report.aux
 report/report.log
 corpus.zip
