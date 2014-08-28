@@ -1,10 +1,11 @@
 """This module contains basic codes for the project, such as a Wave object to
-save the rate and data from .wav files and functions to read the utterances.
+save the rate and data from a .wav files and functions to read the speakers and
+the utterances.
 """
 
 
 import scipy.io.wavfile as wavfile
-import os
+import os, os.path
 
 
 class Wave(object):
@@ -17,14 +18,18 @@ class Wave(object):
         self.data = wavf[1]
 
     def __str__(self):
-        ret = 'rate: %d\nsample_width: %d\ndata: %s' % (self.rate, self.width(),
+        ret = 'rate: %d\nsample_length: %d\ndata: %s' % (self.rate, self.length(),
               self.data)
         return ret
 
     def save(self, filename):
+        """Saves a Wave object into a .wav file.
+        """
         wavfile.write(filename, self.rate, self.data)
 
-    def width(self):
+    def length(self):
+        """Size of the data array.
+        """
         return len(self.data)
 
 
@@ -58,8 +63,11 @@ def read_utterance(subcorpus, speaker, utterance):
     return wave
 
 
+# Test
 if __name__ == '__main__':
-    basic = open('basic.out', 'w')
+    if not os.path.exists('tests'):
+        os.mkdir('tests')
+    basic = open('tests/basic.out', 'w')
     corpus = ['corpus/enroll_1/', 'corpus/enroll_2/', 'corpus/imposter/']
 
     for subcorpus in corpus:
@@ -84,3 +92,5 @@ if __name__ == '__main__':
 
         print(file=basic)
         print(file=basic)
+
+    print('output to file "tests/basic.out"')
