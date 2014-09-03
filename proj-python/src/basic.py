@@ -5,7 +5,8 @@ the utterances.
 
 
 import scipy.io.wavfile as wavfile
-import os, os.path
+import numpy
+import os
 
 
 class Wave(object):
@@ -15,7 +16,7 @@ class Wave(object):
     def __init__(self, filename):
         wavf = wavfile.read(filename)
         self.rate = wavf[0]
-        self.data = wavf[1]
+        self.data = wavf[1].astype(numpy.int64, copy=False) # by default, numpy creates a array of int16
 
     def __str__(self):
         ret = 'rate: %d\nsample_length: %d\ndata: %s' % (self.rate, self.length(),
@@ -65,29 +66,27 @@ def read_utterance(subcorpus, speaker, utterance):
 
 # Test
 if __name__ == '__main__':
+    import os.path
+
+
     if not os.path.exists('tests'):
         os.mkdir('tests')
     basic = open('tests/basic.out', 'w')
     corpus = ['corpus/enroll_1/', 'corpus/enroll_2/', 'corpus/imposter/']
 
     for subcorpus in corpus:
+        print(subcorpus)
         print(subcorpus, file=basic)
         (females, males) = read_speakers(subcorpus)
+        speakers = females + males
 
-        for female in females:
-            print(female, file=basic)
-            utterances = read_utterances_from_speaker(subcorpus, female)
+        for speaker in speakers:
+            print(speaker)
+            print(speaker, file=basic)
+            utterances = read_utterances_from_speaker(subcorpus, speaker)
             for utterance in utterances:
                 print(utterance, file=basic)
-                wave = read_utterance(subcorpus, female, utterance)
-                print(wave, file=basic)
-
-        for male in males:
-            print(male, file=basic)
-            utterances = read_utterances_from_speaker(subcorpus, male)
-            for utterance in utterances:
-                print(utterance, file=basic)
-                wave = read_utterance(subcorpus, male, utterance)
+                wave = read_utterance(subcorpus, speaker, utterance)
                 print(wave, file=basic)
 
         print(file=basic)
