@@ -1,4 +1,4 @@
-proj-python/src/corpus/
+proj-python/src/corpus*
 proj-python/src/tests
 proj-python/src/__pycache__/
 proj-python/src-old/__pycache__/
