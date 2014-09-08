@@ -21,11 +21,10 @@ def frame_energy(wave, sample_len, index):
 
     energy = 0
     for n in samples:
-        energy = energy + numpy.power(wave.data[n], 2)
+        energy = energy + numpy.absolute(wave.data[n])
 
     energy = 10*numpy.log10(energy)
     return energy
-
 
 def energy(wave, frame_len=0.01):
     """Returns the energy of the signal (dB), given a Wave object and the frame length
@@ -40,48 +39,59 @@ def energy(wave, frame_len=0.01):
 
     return energy
 
+def vad(wave, threshold): #VAD energy + zero crossing rate
+    """Remove signal frames when the energy is lower than a certain threshold.
+    """
+    pass
+
 
 if __name__ == '__main__':
     import os.path
+    import shutil
     import sys
     import matplotlib.pyplot as plt
     from basic import read_speakers, read_utterances_from_speaker, read_utterance
 
 
-    if not os.path.exists('tests'):
-        os.mkdir('tests')
-    if not os.path.exists('tests/preproc'):
-        os.mkdir('tests/preproc')
-    preproc = open('tests/preproc.out', 'w')
+    if len(sys.argv) <= 1:
+        print('write something you fool!')
+        sys.exit()
+    command = sys.argv[1]   # 'draw', 'vad'
+
+    if os.path.exists('corpus_%s' % command):
+        shutil.rmtree('corpus_%s' % command)
+    os.mkdir('corpus_%s' % command)
 
     corpus = ['enroll_1', 'enroll_2', 'imposter']
     for subcorpus in corpus:
+        os.mkdir('corpus_%s/%s' % (command, subcorpus))
+
         subcorpus_path = 'corpus/%s/' % subcorpus
         print(subcorpus_path)
-        print(subcorpus_path, file=preproc)
         (females, males) = read_speakers(subcorpus_path)
         speakers = females + males
 
         for speaker in speakers:
+            os.mkdir('corpus_%s/%s/%s' % (command, subcorpus, speaker))
+
             print(speaker)
-            print(speaker, file=preproc)
             utterances = read_utterances_from_speaker(subcorpus_path, speaker)
             for utterance in utterances:
-                print(utterance, file=preproc)
+                print(utterance)
                 wave = read_utterance(subcorpus_path, speaker, utterance)
                 wave_energy = energy(wave)
-                print(wave_energy, file=preproc)
+                #TODO calcular zero crossing rate
 
-                plt.clf()
-                plt.grid(True)
-                plt.plot(wave.data, 'r')
-                plt.savefig('tests/preproc/%s-%s-%s-signal.png' % (subcorpus, speaker, utterance))
-                plt.clf()
-                plt.grid(True)
-                plt.plot(wave_energy, 'b')
-                plt.savefig('tests/preproc/%s-%s-%s-energy.png' % (subcorpus, speaker, utterance))
+                if command == 'draw':
+                    plt.clf()
+                    plt.suptitle('SIGNAL')
+                    plt.grid(True)
+                    plt.plot(wave.data, 'r')
+                    plt.savefig('corpus_%s/%s/%s/%s-A.png' % (command, subcorpus, speaker, utterance))
+                    plt.clf()
+                    plt.suptitle('ENERGY (dB)')
+                    plt.grid(True)
+                    plt.plot(wave_energy, 'b')
+                    plt.savefig('corpus_%s/%s/%s/%s-B.png' % (command, subcorpus, speaker, utterance))
 
-        print(file=preproc)
-        print(file=preproc)
-
-    print('output to file "tests/preproc.out"')
+    print('finished')
