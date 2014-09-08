@@ -1,0 +1,5 @@
+Given the utterance corpus (in src/corpus/), for each utterance read:
+
+1 - A highpass filter above 100 Hz is applied to eliminate the 60 Hz hum (see Mains hum in Wikipedia). As the corpus sampling frequency is 16 kHz, the utterance is low passed in 8 kHz (so, a bandpass filter between 100 Hz and 8 kHz).
+
+2 - A VAD (Voice Activity Detection) algorithm is used to remove parts of silence or pure noise. One approach is use a combination of energy and zero crossing rate VADs.
