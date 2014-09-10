@@ -1,11 +1,16 @@
 """Module containing pre-processing algorithms to remove silence and noise from
 utterances.
+
+References:
+
+[1] L. R. Rabiner. "Algorithm for determining the endpoints of isolated utterances."
+in Journal of the Acoustical Society of America, volume 56, page S31, 1974.
 """
 
 
 from basic import Wave
 import math
-import numpy
+import numpy as np
 
 
 
@@ -17,13 +22,13 @@ def frame_energy(wave, sample_len, index):
     end = (index + 1) * sample_len
     if end > wave.length():
         end = wave.length()
-    samples = range(start, end)
+    samples = wave.data[start : end]
 
     energy = 0
-    for n in samples:
-        energy = energy + numpy.absolute(wave.data[n])
+    for sample in samples:
+        energy = energy + np.absolute(sample)  #magnitude instead of square explained in [1]
 
-    energy = 10*numpy.log10(energy)
+    energy = 10*np.log10(energy)
     return energy
 
 def energy(wave, frame_len=0.01):
@@ -33,15 +38,48 @@ def energy(wave, frame_len=0.01):
     sample_len = math.ceil(wave.rate * frame_len)
     num_frames = math.ceil(wave.length() / sample_len)
 
-    energy = numpy.zeros(num_frames)
+    energy = np.zeros(num_frames)
     for i in range(num_frames):
         energy[i] = frame_energy(wave, sample_len, i)
 
     return energy
 
-def vad(wave, threshold): #VAD energy + zero crossing rate
-    """Remove signal frames when the energy is lower than a certain threshold.
+def signal(array):
+    """Auxiliar function. Similar to 'numpy.sign', but with 'x == 0' returning '1'.
     """
+    ret = [-1 if a < 0 else 1 for a in array]
+    return np.array(ret, dtype=np.int64)
+
+def frame_zcr(wave, sample_len, index):
+    """Calculates the zero crossing rate (zcr) in a frame.
+    """
+    start = index * sample_len
+    end = (index + 1) * sample_len
+    if end > wave.length():
+        end = wave.length()
+    samples_signals = signal(wave.data[start : end])
+    length = len(samples_signals)
+
+    crossings = 0
+    for n in range(1, length):
+        crossings = crossings + abs(samples_signals[n] - samples_signals[n - 1])//2
+
+    return crossings
+
+def zcr(wave, frame_len=0.01):
+    """Calculates the zero crossing rate (zcr) of the signal for each frame (by
+    default 10 ms length).
+    """
+    sample_len = math.ceil(wave.rate * frame_len)
+    num_frames = math.ceil(wave.length() / sample_len)
+
+    zcr = np.zeros(num_frames)
+    for i in range(num_frames):
+        zcr[i] = frame_zcr(wave, sample_len, i)
+
+    return zcr
+
+def vad(wave, threshold): #VAD energy + zcr
     pass
 
 
@@ -80,18 +118,23 @@ if __name__ == '__main__':
                 print(utterance)
                 wave = read_utterance(subcorpus_path, speaker, utterance)
                 wave_energy = energy(wave)
-                #TODO calcular zero crossing rate
+                wave_zcr = zcr(wave)
 
                 if command == 'draw':
                     plt.clf()
                     plt.suptitle('SIGNAL')
                     plt.grid(True)
                     plt.plot(wave.data, 'r')
-                    plt.savefig('corpus_%s/%s/%s/%s-A.png' % (command, subcorpus, speaker, utterance))
+                    plt.savefig('corpus_%s/%s/%s/%s.png' % (command, subcorpus, speaker, utterance))
                     plt.clf()
                     plt.suptitle('ENERGY (dB)')
                     plt.grid(True)
                     plt.plot(wave_energy, 'b')
-                    plt.savefig('corpus_%s/%s/%s/%s-B.png' % (command, subcorpus, speaker, utterance))
+                    plt.savefig('corpus_%s/%s/%s/%s-energy.png' % (command, subcorpus, speaker, utterance))
+                    plt.clf()
+                    plt.suptitle('ZERO CROSSING RATE')
+                    plt.grid(True)
+                    plt.plot(wave_zcr, 'g')
+                    plt.savefig('corpus_%s/%s/%s/%s-zcr.png' % (command, subcorpus, speaker, utterance))
 
     print('finished')
