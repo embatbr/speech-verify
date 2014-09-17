@@ -30,17 +30,15 @@ def frame_energy(wave, sample_len, index):
 
     return energy
 
-def energy(wave, frame_len=0.01):
+def energy(wave, sample_len, num_frames):
     """Returns the energy of the signal (dB), given a Wave object and the frame length
     in seconds (default 0.02).
     """
-    sample_len = math.ceil(wave.rate * frame_len)
-    num_frames = math.ceil(wave.length() / sample_len)
-
     energy = np.zeros(num_frames)
     for i in range(num_frames):
         energy[i] = frame_energy(wave, sample_len, i)
 
+    energy = energy.astype(np.int64, copy=False)
     return energy
 
 def signal(array):
@@ -65,79 +63,67 @@ def frame_zcr(wave, sample_len, index):
 
     return crossings
 
-def zcr(wave, frame_len=0.01):
+def zcr(wave, sample_len, num_frames):
     """Calculates the zero crossing rate (zcr) of the signal for each frame (by
     default 10 ms length).
     """
-    sample_len = math.ceil(wave.rate * frame_len)
-    num_frames = math.ceil(wave.length() / sample_len)
-
     zcr = np.zeros(num_frames)
     for i in range(num_frames):
         zcr[i] = frame_zcr(wave, sample_len, i)
 
     return zcr
 
-def search_point(index, energy, itl, itu, incr=1):
-    """Search for the beginning point (if incr == 1) or the ending point (if
-    incr == -1).
-    """
-    m = index
-    while True:
-        while energy[m] < itl:
-            m = m + incr
-
-        i = m
-
-        while (energy[i] >= itl) and (energy[i] < itu): #quebra em f00/phrase02, i = 10 (i == len)
-            i = i + incr
-
-        if energy[i] < itl:
-            m = i + incr
-        else:   #if "energy[i] >= itl", then "energy[i] >= itu"
-            if i == m:
-                return (i - incr)
-            return i
-
 
 def vad(wave, frame_len=0.01): #VAD energy + zcr
-    wave_energy = energy(wave)
-    wave_zcr = zcr(wave)
+    sample_len = math.ceil(wave.rate * frame_len)
+    num_frames = math.ceil(wave.length() / sample_len)
+    wave_energy = energy(wave, sample_len, num_frames)
+    wave_zcr = zcr(wave, sample_len, num_frames)
 
     initial_silence_len = math.ceil(0.1/frame_len)  #number of frames for the first 100 ms
 
     #zero crossing rate
-    zcr_avg = np.average(wave_zcr[ : initial_silence_len])
-    zcr_std = np.std(wave_zcr[ : initial_silence_len])
+    zcr_silence = wave_zcr[ : initial_silence_len]
+    avg_zcr_silence = np.average(zcr_silence)
+    std_zcr_silence = np.std(zcr_silence)
     fixed_izct = 25     #25 crossings for a frame of 10 ms
-    izct = min(fixed_izct, zcr_avg + 2*zcr_std) #zero crossing threshold
+    izct = min(fixed_izct, avg_zcr_silence + 2*std_zcr_silence) #zero crossing threshold
 
     #energy
-    energy_initial_silence = wave_energy[ : initial_silence_len]
-    peak_energy = np.amax(energy_initial_silence)
-    silence_energy = np.amin(energy_initial_silence)
-    I1 = 0.03*(peak_energy - silence_energy) + silence_energy
-    I2 = 4*silence_energy
-    itl = min(I1, I2)   #lower energy threshold
-    itu = 5*itl         #higher energy threshold
+    energy_silence = wave_energy[ : initial_silence_len]
+    IMX = np.amax(energy_silence)               #peak energy
+    IMN = np.amin(energy_silence)               #silence energy
+    I1 = 0.03*(IMX - IMN) + IMN
+    I2 = 4*IMN
+    ITL = min(I1, I2)   #lower energy threshold
+    ITU = 5*ITL         #higher energy threshold
 
-    #beginning point
-    N1 = search_point(0, wave_energy[ : initial_silence_len], itl, itu)
-    print('N1 =', N1)
+    #search for starting/ending point based on energy thresholds
+    ITL_energy = [i for i in range(len(wave_energy)) if wave_energy[i] >= ITL]
+    ITU_energy = [i for i in range(len(wave_energy)) if wave_energy[i] >= ITU]
+    if (ITU_energy == []):  #if no frame energy exceeds ITU, there is no VAD
+        return wave
 
-    #ending point
-    N2 = search_point(initial_silence_len - 1, wave_energy[ : initial_silence_len],
-                      itl, itu, incr=-1)
-    print('N2 =', N2)
+    sample_len = math.ceil(wave.rate * frame_len)
+    N1 = ITU_energy[0]
+    if (N1 == ITL_energy[0]) and N1 > 0:
+        N1 = N1 - 1
+    N2 = ITU_energy[-1]
+    if (N2 == ITL_energy[-1]) and N2 < (wave.length() - 1):
+        n2 = N2 + 1
+    print('U1 = 0 U2 =', len(wave_energy) - 1)
+    print('N1 =', N1, 'N2 =', N2)
 
-    #TODO cortar o lixo
+    return wave.clone(N1 * sample_len, N2 * sample_len)
 
 
-def draw(wave):
+def draw(wave, frame_len=0.01):
     """Draws the graphics of the signal,, energy, energy in dB and zero crossing rate.
     """
-    wave_energy = energy(wave)
-    wave_zcr = zcr(wave)
+    sample_len = math.ceil(wave.rate * frame_len)
+    num_frames = math.ceil(wave.length() / sample_len)
+    wave_energy = energy(wave, sample_len, num_frames)
+    wave_zcr = zcr(wave, sample_len, num_frames)
 
     plt.clf()
     plt.suptitle('SIGNAL')
@@ -197,7 +183,8 @@ if __name__ == '__main__':
                 wave = read_utterance(subcorpus_path, speaker, utterance)
 
                 if command == 'vad':
-                    vad(wave)
+                    wave_vad = vad(wave)
+                    wave_vad.save('corpus_%s/%s/%s/%s' % (command, subcorpus, speaker, utterance))
                 elif command == 'draw':
                     draw(wave)
 

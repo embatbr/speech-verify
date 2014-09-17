@@ -5,7 +5,7 @@ the utterances.
 
 
 import scipy.io.wavfile as wavfile
-import numpy
+import numpy as np
 import os
 
 
@@ -13,10 +13,11 @@ class Wave(object):
     """Class to describe a basic .wav file. The Wave object contains the sampling
     rate and data from the .wav file.
     """
-    def __init__(self, filename):
-        wavf = wavfile.read(filename)
-        self.rate = wavf[0]
-        self.data = wavf[1].astype(numpy.int64, copy=False) # by default, numpy creates a array of int16
+    def __init__(self, filename=None):
+        if filename is not None:
+            wavf = wavfile.read(filename)
+            self.rate = wavf[0]
+            self.data = wavf[1].astype(np.int64, copy=False) # by default, numpy creates a array of int16
 
     def __str__(self):
         ret = 'rate: %d\nsample_length: %d\ndata: %s' % (self.rate, self.length(),
@@ -32,6 +33,12 @@ class Wave(object):
         """Size of the data array.
         """
         return len(self.data)
+
+    def clone(self, start, end):
+        cloned_wave = Wave()
+        cloned_wave.rate = self.rate
+        cloned_wave.data = self.data[start : end].astype(np.int16, copy=False)
+        return cloned_wave
 
 
 def read_speakers(subcorpus):
